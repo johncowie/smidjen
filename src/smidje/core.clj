@@ -1,12 +1,14 @@
 (ns smidje.core
   (:require [clojure.test :refer [is testing deftest]]))
 
-(declare => =not=> fact facts future-fact)
+(declare => =not=> fact facts future-fact future-facts)
 
 (def qual=> #'smidje.core/=>)
 (def qual=not=> #'smidje.core/=not=>)
 (def qual=>fact #'smidje.core/fact)
 (def qual=>facts #'smidje.core/facts)
+(def qual=>future-fact #'smidje.core/future-fact)
+(def qual=>future-facts #'smidje.core/future-facts)
 
 (defn scan
   ([f n s] (scan f (constantly true) n s))
@@ -55,7 +57,7 @@
   (#{qual=>fact qual=>facts} (try-resolve s)))
 
 (defn future-fact-form? [s]
-  (#{#'smidje.core/future-fact} (try-resolve s)))
+  (#{qual=>future-fact qual=>future-facts} (try-resolve s)))
 
 (defn future-fact-expr [[d & _]]
   `(prn ~(str "WORK TO DO: " d)))
@@ -84,4 +86,7 @@
   (expand-facts body))
 
 (defmacro future-fact [& body]
+  (future-fact-expr body))
+
+(defmacro future-facts [& body]
   (future-fact-expr body))

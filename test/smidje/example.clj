@@ -1,6 +1,6 @@
 (ns smidje.example
   (:require
-    [clojure.test :refer [deftest]]
+    [clojure.test :refer [deftest is testing]]
     [smidje.core :refer [fact facts =>]]))
 
 (comment
@@ -9,3 +9,5 @@
           (+ 2 2) => 6
           (fact (+ 2 2) => 5
                 (+ 2 4) => 5))))
+
+
