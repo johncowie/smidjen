@@ -1,6 +1,13 @@
 (ns smidje.core
   (:require [clojure.test :refer [is testing deftest]]))
 
+(declare => =not=> fact facts)
+
+(def qual=> #'smidje.core/=>)
+(def qual=not=> #'smidje.core/=not=>)
+(def qual=>fact #'smidje.core/fact)
+(def qual=>facts #'smidje.core/facts)
+
 (defn scan
   ([f n s] (scan f (constantly true) n s))
   ([f p n s]
@@ -11,17 +18,30 @@
          (cons (first s) (scan f p n (rest s))))
        s))))
 
+(defn try-resolve [s]
+  (if (symbol? s)
+    (if-let [q (resolve s)]
+      q
+      (throw (Exception. (str "Couldn't find " s))))
+    s))
+
 (defn arrow-form? [s]
-  (#{'=> '=not=>} s))
+  (#{qual=> qual=not=>} (try-resolve s)))
+
+(defn eq-arrow? [s]
+  (= qual=> (try-resolve s)))
+
+(defn not-eq-arrow? [s]
+  (= qual=not=> (try-resolve s)))
 
 (defn valid-assertion? [actual s expected]
   (and (arrow-form? s)
        (not (arrow-form? actual))
-       (not (arrow-form? expected))))                       ;; TODO if middle is arrow and others aren't, throw exception
+       (not (arrow-form? expected))))                                                         ;; TODO if middle is arrow and others aren't, throw exception
 
 (defn make-assertion [actual s expected]
-  (cond (= s '=>) `(is (= ~expected ~actual))
-        (= s '=not=>) `(is (not (= ~expected ~actual)))))
+  (cond (eq-arrow? s) `(is (= ~expected ~actual))
+        (not-eq-arrow? s) `(is (not (= ~expected ~actual)))))
 
 (defn assertions [body]
   (scan make-assertion valid-assertion? 3 body))
@@ -31,9 +51,12 @@
     `(testing ~(first body) ~@(rest body))
     `(testing ~@body)))
 
+(defn fact-form? [s]
+  (#{qual=>fact qual=>facts} (try-resolve s)))
+
 (defn expand-nested-facts [body]
   (if (sequential? body)
-    (if (#{'fact 'facts} (first body))
+    (if (fact-form? (first body))
       (->> (rest body) (map expand-nested-facts) assertions wrap-testing-block)
       (->> body (map expand-nested-facts) assertions))
     body))
@@ -48,8 +71,4 @@
 
 (defmacro facts [& body]
   (expand-facts body))
-
-(def => :arrow)
-(def =not=> :not-arrow)
-
 

@@ -1,6 +1,6 @@
 (ns smidje.core-test
   (:require [clojure.test :refer [deftest testing is]]
-            [smidje.core :refer [fact facts]]))
+            [smidje.core :as sm :refer [fact facts => =not=>]]))
 
 (def expansions
   {;
@@ -54,15 +54,20 @@
    '(fact (+ 1 1) =not=> 3)
    '(clojure.test/testing (clojure.test/is (clojure.core/not (clojure.core/= 3 (+ 1 1)))))
 
+   ; can use alias
+   '(sm/facts
+      (sm/fact (+ 1 1) => 3))
+   '(clojure.test/testing
+      (clojure.test/testing (clojure.test/is (clojure.core/= 3 (+ 1 1)))))
+
    })
 
 (def test-cases
-  (for [[actual expected] expansions]
-    [(str expected)
-     (str (macroexpand-1 actual))]))
+  (doall
+    (for [[actual expected] expansions]
+      [(str expected)
+       (str (macroexpand-1 actual))])))
 
 (deftest fact-macro
   (doseq [[expected actual] test-cases]
     (is (= expected actual))))
-
-(fact-macro)

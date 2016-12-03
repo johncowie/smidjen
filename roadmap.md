@@ -16,5 +16,5 @@
 
 ### Issues
 
-- Providing alias to smidje namespace?
+- [x] Providing alias to smidje namespace?
 
