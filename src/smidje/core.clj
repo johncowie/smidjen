@@ -2,90 +2,90 @@
 
 (declare => =not=> fact facts future-fact future-facts)
 
-(def qual=> #'smidje.core/=>)
-(def qual=not=> #'smidje.core/=not=>)
-(def qual=>fact #'smidje.core/fact)
-(def qual=>facts #'smidje.core/facts)
-(def qual=>future-fact #'smidje.core/future-fact)
-(def qual=>future-facts #'smidje.core/future-facts)
-
-(defn qualify [prefix s]
+(defn- qualify [prefix s]
   (symbol (str (name prefix) "/" (name s))))
 
-(defn scan
-  ([f n s] (scan f (constantly true) n s))
-  ([f p n s]
-   (let [ss (take n s)]
-     (if (= (count ss) n)
-       (if (apply p ss)
-         (cons (apply f ss) (scan f p n (drop n s)))
-         (cons (first s) (scan f p n (rest s))))
-       s))))
-
-(defn try-resolve [s]
+(defn- try-resolve [s]
   (if (symbol? s)
-    (if-let [q (resolve s)]
-      q
-      (throw (Exception. (str "Couldn't find " s))))
+    (resolve s)
     s))
 
-(defn arrow-form? [s]
-  (#{qual=> qual=not=>} (try-resolve s)))
+(defn- smidje-sym? [f smidje-ns s]
+  (= (str "#'" smidje-ns "/" f)
+     (str (try-resolve s))))
 
-(defn eq-arrow? [s]
-  (= qual=> (try-resolve s)))
+(def ^:private eq-arrow? (partial smidje-sym? '=>))
+(def ^:private not-eq-arrow? (partial smidje-sym? '=not=>))
+(def ^:private fact? (partial smidje-sym? 'fact))
+(def ^:private facts? (partial smidje-sym? 'facts))
+(def ^:private future-fact? (partial smidje-sym? 'future-fact))
+(def ^:private future-facts? (partial smidje-sym? 'future-facts))
 
-(defn not-eq-arrow? [s]
-  (= qual=not=> (try-resolve s)))
+(defn- arrow-form? [smidje-ns s]
+  (or (eq-arrow? smidje-ns s)
+      (not-eq-arrow? smidje-ns s)))
 
-(defn valid-assertion? [actual s expected]
-  (and (arrow-form? s)
-       (not (arrow-form? actual))
-       (not (arrow-form? expected))))                                                         ;; TODO if middle is arrow and others aren't, throw exception
+(defn- fact-form? [smidje-ns s]
+  (or (fact? smidje-ns s)
+      (facts? smidje-ns s)))
 
-(defn make-assertion [test-ns actual s expected]
-  (cond (eq-arrow? s) `(~(qualify test-ns 'is) (= ~expected ~actual))
-        (not-eq-arrow? s) `(~(qualify test-ns 'is) (not (= ~expected ~actual)))))
+(defn- future-fact-form? [smidje-ns s]
+  (or (future-fact? smidje-ns s)
+      (future-facts? smidje-ns s)))
 
-(defn assertions [test-ns body]
-  (scan (partial make-assertion test-ns) valid-assertion? 3 body))
+(defn- scan
+  [f n s]
+  (let [ss (take n s)]
+    (if (= (count ss) n)
+      (if-let [r (apply f ss)]
+        (cons r (scan f n (drop n s)))
+        (cons (first s) (scan f n (rest s))))
+      s)))
 
-(defn wrap-testing-block [test-ns body]
+(defn- valid-assertion? [smidje-ns actual s expected]
+  (and (arrow-form? smidje-ns s)
+       (not (arrow-form? smidje-ns actual))
+       (not (arrow-form? smidje-ns expected))))                                                         ;; TODO if middle is arrow and others aren't, throw exception
+
+(defn- make-assertion [test-ns smidje-ns actual s expected]
+  (when (valid-assertion? smidje-ns actual s expected)
+    (cond (eq-arrow? smidje-ns s) `(~(qualify test-ns 'is) (= ~expected ~actual))
+          (not-eq-arrow? smidje-ns s) `(~(qualify test-ns 'is) (not (= ~expected ~actual))))))
+
+(defn- assertions [test-ns smidje-ns body]
+  (scan (partial make-assertion test-ns smidje-ns) 3 body))
+
+(defn- wrap-testing-block [test-ns body]
   (if (string? (first body))
     `(~(qualify test-ns 'testing) ~(first body) ~@(rest body))
     `(~(qualify test-ns 'testing) ~@body)))
 
-(defn fact-form? [s]
-  (#{qual=>fact qual=>facts} (try-resolve s)))
-
-(defn future-fact-form? [s]
-  (#{qual=>future-fact qual=>future-facts} (try-resolve s)))
 
 (defn future-fact-expr [[d & _]]
   `(prn ~(str "WORK TO DO: " d)))
 
-(defn expand-nested-facts [test-ns body]
+(defn- expand-nested-facts [test-ns smidje-ns body]
   (if (sequential? body)
     (let [[f & r] body]
       (cond
-        (fact-form? f)
-        (->> r (map (partial expand-nested-facts test-ns)) (assertions test-ns) (wrap-testing-block test-ns))
-        (future-fact-form? f)
+        (fact-form? smidje-ns f)
+        (->> r (map (partial expand-nested-facts test-ns smidje-ns)) (assertions test-ns smidje-ns) (wrap-testing-block test-ns))
+        (future-fact-form? smidje-ns f)
         (future-fact-expr r)
         :else
-        (->> body (map (partial expand-nested-facts test-ns)) (assertions test-ns))))
+        (->> body (map (partial expand-nested-facts test-ns smidje-ns)) (assertions test-ns smidje-ns))))
     body))
 
-(defn expand-facts [test-ns body]
+(defn expand-facts [test-ns smidje-ns body]
   (if (sequential? body)
-    (->> body (map (partial expand-nested-facts test-ns)) (assertions test-ns) (wrap-testing-block test-ns))
+    (->> body (map (partial expand-nested-facts test-ns smidje-ns)) (assertions test-ns smidje-ns) (wrap-testing-block test-ns))
     body))
 
 (defmacro fact [& body]
-  (expand-facts 'clojure.test body))
+  (expand-facts 'clojure.test 'smidje.core body))
 
 (defmacro facts [& body]
-  (expand-facts 'clojure.test body))
+  (expand-facts 'clojure.test 'smidje.core body))
 
 (defmacro future-fact [& body]
   (future-fact-expr body))

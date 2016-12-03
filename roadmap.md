@@ -5,9 +5,9 @@
 - [x] facts synonym
 - [x] =not=>
 - [x] future-facts
+- [x] cljs support
 - [ ] predicates
 - [ ] every-checker
-- [ ] cljs support
 
 ### Other ideas / Nice to have
 
