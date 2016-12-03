@@ -33,3 +33,7 @@ e.g.
 ;;     (testing "about three"
 ;;       (is (= "is the magic number" 3)))))
 ```
+
+### Who tests the tests?
+
+```lein test```

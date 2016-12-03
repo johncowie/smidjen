@@ -9,7 +9,12 @@
 - [ ] every-checker
 - [ ] cljs support
 
-#### Other ideas / Nice to have
+### Other ideas / Nice to have
 
 - [ ] Output colouring
 - [ ] Humane test output
+
+### Issues
+
+- Providing alias to smidje namespace?
+

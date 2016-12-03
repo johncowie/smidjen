@@ -11,16 +11,20 @@
          (cons (first s) (scan f p n (rest s))))
        s))))
 
-(defn assertion? [actual s expected]
-  (and (= s '=>)
-       (not (= actual '=>))
-       (not (= expected '=>))))                             ;; TODO if middle is arrow and others aren't, throw exception
+(defn arrow-form? [s]
+  (#{'=> '=not=>} s))
+
+(defn valid-assertion? [actual s expected]
+  (and (arrow-form? s)
+       (not (arrow-form? actual))
+       (not (arrow-form? expected))))                       ;; TODO if middle is arrow and others aren't, throw exception
 
 (defn make-assertion [actual s expected]
-  `(is (= ~expected ~actual)))
+  (cond (= s '=>) `(is (= ~expected ~actual))
+        (= s '=not=>) `(is (not (= ~expected ~actual)))))
 
 (defn assertions [body]
-  (scan make-assertion assertion? 3 body))
+  (scan make-assertion valid-assertion? 3 body))
 
 (defn wrap-testing-block [body]
   (if (string? (first body))
@@ -46,5 +50,6 @@
   (expand-facts body))
 
 (def => :arrow)
+(def =not=> :not-arrow)
 
 

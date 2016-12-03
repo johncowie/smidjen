@@ -41,7 +41,6 @@
       (clojure.test/testing
         (clojure.test/is (clojure.core/= "4" (str (+ 2 2))))))
 
-
    ;; nested facts with facts synonym
    '(facts "top level fact group"
            (fact (+ 1 1) => 3)
@@ -50,6 +49,10 @@
       (clojure.test/testing (clojure.test/is (clojure.core/= 3 (+ 1 1))))
       (clojure.test/testing "more"
         (clojure.test/is (clojure.core/= "2" (str 2)))))
+
+   ;; the =not=checker
+   '(fact (+ 1 1) =not=> 3)
+   '(clojure.test/testing (clojure.test/is (clojure.core/not (clojure.core/= 3 (+ 1 1)))))
 
    })
 
