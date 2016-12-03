@@ -3,7 +3,7 @@
 - [x] basic fact
 - [x] nested facts
 - [x] facts synonym
-- [ ] =not=>
+- [x] =not=>
 - [ ] future-facts
 - [ ] predicates
 - [ ] every-checker
