@@ -63,13 +63,3 @@
     (is (= expected actual))))
 
 (fact-macro)
-
-;; TODO
-;;  X basic fact
-;;  X nested facts
-;;  X facts synonym
-;;    future-facts
-;;    predicates
-;;    every-checker
-;;    output colouring?
-;;    cljs support
