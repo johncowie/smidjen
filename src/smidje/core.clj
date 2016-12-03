@@ -1,5 +1,4 @@
-(ns smidje.core
-  (:require [clojure.test :refer [is testing deftest]]))
+(ns smidje.core)
 
 (declare => =not=> fact facts future-fact future-facts)
 
@@ -9,6 +8,9 @@
 (def qual=>facts #'smidje.core/facts)
 (def qual=>future-fact #'smidje.core/future-fact)
 (def qual=>future-facts #'smidje.core/future-facts)
+
+(defn qualify [prefix s]
+  (symbol (str (name prefix) "/" (name s))))
 
 (defn scan
   ([f n s] (scan f (constantly true) n s))
@@ -41,17 +43,17 @@
        (not (arrow-form? actual))
        (not (arrow-form? expected))))                                                         ;; TODO if middle is arrow and others aren't, throw exception
 
-(defn make-assertion [actual s expected]
-  (cond (eq-arrow? s) `(is (= ~expected ~actual))
-        (not-eq-arrow? s) `(is (not (= ~expected ~actual)))))
+(defn make-assertion [test-ns actual s expected]
+  (cond (eq-arrow? s) `(~(qualify test-ns 'is) (= ~expected ~actual))
+        (not-eq-arrow? s) `(~(qualify test-ns 'is) (not (= ~expected ~actual)))))
 
-(defn assertions [body]
-  (scan make-assertion valid-assertion? 3 body))
+(defn assertions [test-ns body]
+  (scan (partial make-assertion test-ns) valid-assertion? 3 body))
 
-(defn wrap-testing-block [body]
+(defn wrap-testing-block [test-ns body]
   (if (string? (first body))
-    `(testing ~(first body) ~@(rest body))
-    `(testing ~@body)))
+    `(~(qualify test-ns 'testing) ~(first body) ~@(rest body))
+    `(~(qualify test-ns 'testing) ~@body)))
 
 (defn fact-form? [s]
   (#{qual=>fact qual=>facts} (try-resolve s)))
@@ -62,28 +64,28 @@
 (defn future-fact-expr [[d & _]]
   `(prn ~(str "WORK TO DO: " d)))
 
-(defn expand-nested-facts [body]
+(defn expand-nested-facts [test-ns body]
   (if (sequential? body)
     (let [[f & r] body]
       (cond
         (fact-form? f)
-        (->> r (map expand-nested-facts) assertions wrap-testing-block)
+        (->> r (map (partial expand-nested-facts test-ns)) (assertions test-ns) (wrap-testing-block test-ns))
         (future-fact-form? f)
         (future-fact-expr r)
         :else
-        (->> body (map expand-nested-facts) assertions)))
+        (->> body (map (partial expand-nested-facts test-ns)) (assertions test-ns))))
     body))
 
-(defn expand-facts [body]
+(defn expand-facts [test-ns body]
   (if (sequential? body)
-    (->> body (map expand-nested-facts) assertions wrap-testing-block)
+    (->> body (map (partial expand-nested-facts test-ns)) (assertions test-ns) (wrap-testing-block test-ns))
     body))
 
 (defmacro fact [& body]
-  (expand-facts body))
+  (expand-facts 'clojure.test body))
 
 (defmacro facts [& body]
-  (expand-facts body))
+  (expand-facts 'clojure.test body))
 
 (defmacro future-fact [& body]
   (future-fact-expr body))
