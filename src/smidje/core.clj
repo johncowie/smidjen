@@ -1,7 +1,7 @@
 (ns smidje.core
   (:require [clojure.test :refer [is testing deftest]]))
 
-(declare => =not=> fact facts)
+(declare => =not=> fact facts future-fact)
 
 (def qual=> #'smidje.core/=>)
 (def qual=not=> #'smidje.core/=not=>)
@@ -54,11 +54,22 @@
 (defn fact-form? [s]
   (#{qual=>fact qual=>facts} (try-resolve s)))
 
+(defn future-fact-form? [s]
+  (#{#'smidje.core/future-fact} (try-resolve s)))
+
+(defn future-fact-expr [[d & _]]
+  `(prn ~(str "WORK TO DO: " d)))
+
 (defn expand-nested-facts [body]
   (if (sequential? body)
-    (if (fact-form? (first body))
-      (->> (rest body) (map expand-nested-facts) assertions wrap-testing-block)
-      (->> body (map expand-nested-facts) assertions))
+    (let [[f & r] body]
+      (cond
+        (fact-form? f)
+        (->> r (map expand-nested-facts) assertions wrap-testing-block)
+        (future-fact-form? f)
+        (future-fact-expr r)
+        :else
+        (->> body (map expand-nested-facts) assertions)))
     body))
 
 (defn expand-facts [body]
@@ -72,3 +83,5 @@
 (defmacro facts [& body]
   (expand-facts body))
 
+(defmacro future-fact [& body]
+  (future-fact-expr body))

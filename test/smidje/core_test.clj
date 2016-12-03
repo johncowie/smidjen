@@ -1,6 +1,6 @@
 (ns smidje.core-test
   (:require [clojure.test :refer [deftest testing is]]
-            [smidje.core :as sm :refer [fact facts => =not=>]]))
+            [smidje.core :as sm :refer [fact facts => =not=> future-fact]]))
 
 (def expansions
   {;
@@ -59,6 +59,18 @@
       (sm/fact (+ 1 1) => 3))
    '(clojure.test/testing
       (clojure.test/testing (clojure.test/is (clojure.core/= 3 (+ 1 1)))))
+
+   ; future-fact prints out to console
+   '(future-fact "tbd" (+ 1 1) => 3)
+   '(clojure.core/prn "WORK TO DO: tbd")
+
+   ; future-fact can be nested along with other facts
+   '(facts "some-facts"
+           (fact 2 => 3)
+           (future-fact "future" 3 => 4))
+   '(clojure.test/testing "some-facts"
+      (clojure.test/testing (clojure.test/is (clojure.core/= 3 2)))
+      (clojure.core/prn "WORK TO DO: future"))
 
    })
 
