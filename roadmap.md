@@ -4,7 +4,7 @@
 - [x] nested facts
 - [x] facts synonym
 - [x] =not=>
-- [ ] future-facts
+- [x] future-facts
 - [ ] predicates
 - [ ] every-checker
 - [ ] cljs support
