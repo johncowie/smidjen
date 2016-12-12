@@ -22,22 +22,10 @@
 
 (def ^:private eq-arrow? (smidje-sym? '=>))
 (def ^:private not-eq-arrow? (smidje-sym? '=not=>))
-(def ^:private fact? (smidje-sym? 'fact))
-(def ^:private facts? (smidje-sym? 'facts ))
-(def ^:private future-fact? (smidje-sym? 'future-fact ))
-(def ^:private future-facts? (smidje-sym? 'future-facts ))
 
 (defn- arrow-form? [env s]
   (or (eq-arrow? env s)
       (not-eq-arrow? env s)))
-
-(defn- fact-form? [env s]
-  (or (fact? env s)
-      (facts? env s)))
-
-(defn- future-fact-form? [env s]
-  (or (future-fact? env s)
-      (future-facts? env s)))
 
 (defn- scan
   [f n s]
@@ -70,16 +58,6 @@
 
 (defn future-fact-expr [ns-map [d & _]]
   `(~(qualify (:core ns-map) 'prn) ~(str "WORK TO DO: " d)))
-
-(defn expand-nested-facts [env ns-map body]
-  (if (sequential? body)
-    (let [[f & r] body]
-      (cond
-        (future-fact-form? env f)
-        (future-fact-expr ns-map r)
-        :else
-        (doall (->> body (map (partial expand-nested-facts env ns-map)) (assertions env ns-map)))))
-    body))
 
 (defn expand-facts [env ns-map body]
   (if (sequential? body)
