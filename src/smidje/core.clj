@@ -1,7 +1,7 @@
 (ns smidje.core
   (:require [cljs.analyzer :refer [resolve-var]]))
 
-(declare => =not=> fact facts future-fact future-facts)
+(declare => =not=>)
 
 (defn- qualify [prefix s]
   (symbol (str (name prefix) "/" (name s))))
@@ -22,6 +22,7 @@
 
 (def ^:private eq-arrow? (smidje-sym? '=>))
 (def ^:private not-eq-arrow? (smidje-sym? '=not=>))
+
 
 (defn- arrow-form? [env s]
   (or (eq-arrow? env s)
