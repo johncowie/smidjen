@@ -7,6 +7,7 @@
 - [x] future-facts
 - [x] cljs support
 - [ ] predicates
+- [ ] exception checks
 - [ ] every-checker
 
 ### Other ideas / Nice to have
@@ -17,4 +18,5 @@
 ### Issues
 
 - [x] Providing alias to smidje namespace?
+- [ ] Improve docs
 

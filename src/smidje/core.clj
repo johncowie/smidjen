@@ -75,8 +75,6 @@
   (if (sequential? body)
     (let [[f & r] body]
       (cond
-        (fact-form? env f)
-        (doall (->> r (map (partial expand-nested-facts env ns-map)) (assertions env ns-map) (wrap-testing-block ns-map)))
         (future-fact-form? env f)
         (future-fact-expr ns-map r)
         :else
@@ -85,7 +83,7 @@
 
 (defn expand-facts [env ns-map body]
   (if (sequential? body)
-    (doall (->> body (map (partial expand-nested-facts env ns-map)) (assertions env ns-map) (wrap-testing-block ns-map)))
+    (->> body (assertions env ns-map) (wrap-testing-block ns-map))
     body))
 
 (def cljs-ns {:test 'cljs.test :core 'cljs.core})
