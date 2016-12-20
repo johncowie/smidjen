@@ -1,8 +1,7 @@
 (ns smidje.core-test
   (:require [clojure.test :refer [deftest testing is]]
             [smidje.core :as sm :refer [fact facts =not=> => future-fact future-facts]]
-            [clojure.walk :refer [macroexpand-all]]
-            [clojure.test :as t]))
+            [clojure.walk :refer [macroexpand-all]]))
 
 
 (defn stub-gen-sym
@@ -15,10 +14,10 @@
 
 (defn predictable-macroexpand-all [form]
   (with-redefs [clojure.core/gensym (stub-gen-sym)
-                smidje.core/clj-ns {:core 'c :test 't}]
+                smidje.core/clj-ns {:core 'c :test 't}
+                smidje.core/cljs-ns {:core 'jsc :test 'jst}]
     (print-str (macroexpand-all form))))
 
-;
 (def expansions
   {
    "basic fact without string description"
@@ -38,33 +37,33 @@
            (+ 2 2) => 5
            (+ 1 3) => 4)
     `(t/deftest ~(symbol "test with two facts")
-       (t/is (c/= 5 ~'(+ 2 2)))
-       (t/is (c/= 4 ~'(+ 1 3))))]
+                (t/is (c/= 5 ~'(+ 2 2)))
+                (t/is (c/= 4 ~'(+ 1 3))))]
 
    "nested facts with descriptions"
    ['(facts "some facts"
             (fact "a=b" "a" => "b")
             (fact "c=d" "c" => "d"))
     `(t/deftest ~(symbol "some facts")
-       (t/testing "a=b" (t/is (c/= "b" "a")))
-       (t/testing "c=d" (t/is (c/= "d" "c"))))]
+                (t/testing "a=b" (t/is (c/= "b" "a")))
+                (t/testing "c=d" (t/is (c/= "d" "c"))))]
 
    "nested facts with no descriptions"
    ['(facts "some facts"
             (fact true => true)
             (fact false => true))
     `(t/deftest ~(symbol "some facts")
-       (t/testing "NO_DESCRIPTION" (t/is (c/= true true)))
-       (t/testing "NO_DESCRIPTION" (t/is (c/= true false))))]
+                (t/testing "NO_DESCRIPTION" (t/is (c/= true true)))
+                (t/testing "NO_DESCRIPTION" (t/is (c/= true false))))]
 
    "fact with assertions separated by another statement"
    ['(fact "a" => "a"
            (prn "something")
            "b" => "b")
     `(t/deftest ~'G__0
-       (t/is (c/= "a" "a"))
-       ~'(prn "something")
-       (t/is (c/= "b" "b")))]
+                (t/is (c/= "a" "a"))
+                ~'(prn "something")
+                (t/is (c/= "b" "b")))]
 
    "the =not=checker"
    ['(fact (+ 1 1) =not=> 3)
@@ -82,10 +81,12 @@
    ['(future-facts "tbd" (+ 1 1) => 3)
     `(c/println "WORK TO DO: tbd")]
 
-   ;; TODO test nested future-facts
-   ;; TODO TEST that let binding doesn't mess stuff up
-   ;; TODO nesting works at compile time - but what about functions that wrap facts, then being called inside another fact block?
+   "let binding doesn't mess stuff up"
+   ['(let [x 2] (fact "1+1=3" (+ 1 1) => 3))
+    `(let* [~'x 2] (t/deftest ~(symbol "1+1=3") (t/is (c/= 3 ~'(+ 1 1)))))]
 
+   ;; TODO test nested future-facts
+   ;; TODO nesting works at compile time - but what about functions that wrap facts, then being called inside another fact block?
    })
 
 

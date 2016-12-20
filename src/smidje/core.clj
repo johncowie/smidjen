@@ -67,13 +67,6 @@
         `(~(qualify (:test ns-map) 'deftest) ~(symbol (first body)) ~@(rest body))
         `(~(qualify (:test ns-map) 'deftest) ~(gensym) ~@body)))))
 
-(defn future-fact-expr [ns-map [d & _]]
-  `(~(qualify (:core ns-map) 'println) ~(str "WORK TO DO: " d)))
-
-(defn expand-facts [env ns-map body]
-  (if (sequential? body)
-    (->> body (assertions env ns-map) (wrap-testing-block ns-map env))
-    body))
 
 (def cljs-ns {:test 'cljs.test :core 'cljs.core})
 (def clj-ns {:test 'clojure.test :core 'clojure.core})
@@ -81,16 +74,24 @@
 (defn get-env-ns [env]
   (if env cljs-ns clj-ns))
 
+(defn expand-future-fact [env [d & _]]
+  (let [ns-map (get-env-ns env)]
+    `(~(qualify (:core ns-map) 'println) ~(str "WORK TO DO: " d))))
+
+(defn expand-fact [env body]
+  (let [ns-map (get-env-ns env)]
+    (if (sequential? body)
+      (->> body (assertions env ns-map) (wrap-testing-block ns-map env))
+      body)))
+
 (defmacro fact [& body]
-  (expand-facts &env (get-env-ns &env) body))
+  (expand-fact &env body))
 
 (defmacro facts [& body]
-  (expand-facts &env (get-env-ns &env) body))
+  (expand-fact &env body))
 
 (defmacro future-fact [& body]
-  (future-fact-expr (get-env-ns &env) body))
+  (expand-future-fact &env body))
 
 (defmacro future-facts [& body]
-  (if &env
-    (future-fact-expr (get-env-ns &env) body)
-    (future-fact-expr (get-env-ns &env) body)))
+  (expand-future-fact &env body))
