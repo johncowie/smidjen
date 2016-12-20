@@ -84,6 +84,8 @@
 
    ;; TODO test nested future-facts
    ;; TODO TEST that let binding doesn't mess stuff up
+   ;; TODO nesting works at compile time - but what about functions that wrap facts, then being called inside another fact block?
+
    })
 
 
@@ -101,6 +103,6 @@
       (is (= expected actual)))))
 
 ;; TODO write tests for cljs expansions
-
+;; TODO check whether midje works with aliasing
 
 
