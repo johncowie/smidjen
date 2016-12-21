@@ -17,8 +17,9 @@
 
 (defn- smidje-sym? [f]
   (fn [env s]
-    (= (str "#'" 'smidje.core "/" f)
-       (try-resolve env s))))
+    (let [resolved (try-resolve env s)]
+      (= (str "#'" 'smidje.core "/" f)
+         resolved))))
 
 (def ^:private eq-arrow? (smidje-sym? '=>))
 (def ^:private not-eq-arrow? (smidje-sym? '=not=>))

@@ -1,7 +1,8 @@
 (ns smidje.core-test
   (:require [clojure.test :refer [deftest testing is]]
             [smidje.core :as sm :refer [fact facts =not=> => future-fact future-facts]]
-            [clojure.walk :refer [macroexpand-all]]))
+            [clojure.walk :refer [macroexpand-all]]
+            [cljs.analyzer :refer [resolve-var]]))
 
 
 (defn stub-gen-sym
@@ -12,13 +13,13 @@
        ([prefix] (let [f (first @a)] (swap! a rest) (symbol (str prefix f)))))))
   ([] (stub-gen-sym (range))))
 
-(defn predictable-macroexpand-all [form]
-  (with-redefs [clojure.core/gensym (stub-gen-sym)
-                smidje.core/clj-ns {:core 'c :test 't}
-                smidje.core/cljs-ns {:core 'jsc :test 'jst}]
-    (print-str (macroexpand-all form))))
+(defmacro predictable-macroexpand-all [form]
+  `(with-redefs [clojure.core/gensym (stub-gen-sym)
+                 smidje.core/clj-ns {:core 'c :test 't}
+                 smidje.core/cljs-ns {:core 'jsc :test 'jst}]
+     (print-str (macroexpand-all ~form))))
 
-(def expansions
+(def test-cases
   {
    "basic fact without string description"
    ['(fact 2 => 2)
@@ -85,13 +86,13 @@
    ['(let [x 2] (fact "1+1=3" (+ 1 1) => 3))
     `(let* [~'x 2] (t/deftest ~(symbol "1+1=3") (t/is (c/= 3 ~'(+ 1 1)))))]
 
-   ;; TODO test nested future-facts
-   ;; TODO nesting works at compile time - but what about functions that wrap facts, then being called inside another fact block?
    })
+;; TODO test nested future-facts
+;; TODO nesting works at compile time - but what about functions that wrap facts, then being called inside another fact block?
 
 
-(def expansions2
-  (->> expansions
+(def expanded
+  (->> test-cases
        (map (fn [[test-name [actual expected]]]
               [test-name
                [(predictable-macroexpand-all actual)
@@ -99,11 +100,35 @@
        (into {})))
 
 (deftest fact-macro
-  (doseq [[test-name [actual expected]] expansions2]
+  (doseq [[test-name [actual expected]] expanded]
     (testing test-name
       (is (= expected actual)))))
 
-;; TODO write tests for cljs expansions
+(def js-test-cases
+  {"case1"
+   ['(smidje.core/expand-fact {} '(1 => 3))
+    `(jst/deftest ~'G__0 (jst/is (jsc/= 3 1)))]
+   })
+
+(defmacro js-macroexpand-all [form]
+  `(with-redefs [cljs.analyzer/resolve-var (fn [~'e ~'s]
+                                             (get {"=>"     {:name "smidje.core/=>"}
+                                                   "=not=>" {:name "smidje.core/=not=>"}} (str ~'s)))]
+     (predictable-macroexpand-all ~form)))
+
+(def js-expanded
+  (->> js-test-cases
+       (map (fn [[test-name [actual expected]]]
+              [test-name
+               [(js-macroexpand-all (eval actual))
+                (print-str (macroexpand-all expected))]]))))
+
+(deftest cljs-test
+  (testing "testing that cljs namespaces are used if environment map is present"
+    (doseq [[test-name [actual expected]] js-expanded]
+      (testing test-name
+        (is (= expected actual))))))
+
 ;; TODO check whether midje works with aliasing
 
 
