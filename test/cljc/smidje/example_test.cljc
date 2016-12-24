@@ -1,7 +1,11 @@
 (ns smidje.example-test
   (:require
-    #?(:clj [smidje.core :refer [fact facts => =not=>]]
-       :cljs [smidje.core :refer [=> =not=>] :refer-macros [penv fact facts]])))
+    #?(:clj
+        [smidje.core :refer [fact facts]]
+       :cljs
+       [cljs.test :include-macros true]
+       ;[cljs.analyzer :as ana]
+       [smidje.core  :refer-macros [fact facts]])))
 
 ;{:ns {:rename-macros {},
 ;      :renames {},
@@ -38,9 +42,9 @@
 ;                 :ups-externs nil, :main "smidje.test-runner", :emit-constants nil}, :line 6, :column 1}
 
 
-;(fact "about basic string equality"
-;      "derek" => "clive")
-;
+#_(fact "about basic string equality"
+      "derek" => "clive")
+
 ;(facts "About number equality"
 ;       (+ 2 2) => 5)
 ;

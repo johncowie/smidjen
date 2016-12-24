@@ -9,6 +9,7 @@
 - [ ] predicates
 - [ ] exception checks
 - [ ] every-checker
+- [ ] tabular
 
 ### Other ideas / Nice to have
 

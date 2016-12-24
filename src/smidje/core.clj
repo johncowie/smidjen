@@ -1,32 +1,22 @@
 (ns smidje.core
   (:require [cljs.analyzer :refer [resolve-var]]))
 
-(declare => =not=>)
+(defn cljs-env? [env]
+  (boolean (:ns env)))
 
 (defn- qualify [prefix s]
   (symbol (str (name prefix) "/" (name s))))
 
-(defn resolve-from-env [env s]
-  (when env
-    (str "#'" (:name (resolve-var env s)))))
-
-(defn- try-resolve [env s]
-  (if (symbol? s)
-    (or (resolve-from-env env s) (str (resolve s)))
-    s))
-
 (defn- smidje-sym? [f]
-  (fn [env s]
-    (let [resolved (try-resolve env s)]
-      (= (str "#'" 'smidje.core "/" f)
-         resolved))))
+  (fn [s]
+    (and (symbol? s) (= (name s) (str f)))))
 
 (def ^:private eq-arrow? (smidje-sym? '=>))
 (def ^:private not-eq-arrow? (smidje-sym? '=not=>))
 
-(defn- arrow-form? [env s]
-  (or (eq-arrow? env s)
-      (not-eq-arrow? env s)))
+(defn- arrow-form? [s]
+  (or (eq-arrow? s)
+      (not-eq-arrow? s)))
 
 (defn- scan
   [f n s]
@@ -37,43 +27,49 @@
         (cons (first s) (scan f n (rest s))))
       s)))
 
-(defn- valid-assertion? [env actual s expected]
-  (and (arrow-form? env s)
-       (not (arrow-form? env actual))
-       (not (arrow-form? env expected))))                   ;; TODO if middle is arrow and others aren't, throw exception
+(defn- valid-assertion? [actual s expected]
+  (and (arrow-form? s)
+       (not (arrow-form? actual))
+       (not (arrow-form? expected))))                   ;; TODO if middle is arrow and others aren't, throw exception
 
-(defn- make-assertion [env ns-map actual s expected]
-  (when (valid-assertion? env actual s expected)
-    (cond (eq-arrow? env s)
+(defn- make-assertion [ns-map actual s expected]
+  (when (valid-assertion? actual s expected)
+    (cond (eq-arrow? s)
           `(~(qualify (:test ns-map) 'is) (~(qualify (:core ns-map) '=) ~expected ~actual))
-          (not-eq-arrow? env s)
+          (not-eq-arrow? s)
           `(~(qualify (:test ns-map) 'is) (~(qualify (:core ns-map) 'not) (~(qualify (:core ns-map) '=) ~expected ~actual))))))
 
-(defn- assertions [env ns-map body]
-  (doall (scan (partial make-assertion env ns-map) 3 body)))
+(defn- assertions [ns-map body]
+  (doall (scan (partial make-assertion ns-map) 3 body)))
 
-(def ^:dynamic *nested?* false)
+(def nested-sym (gensym))
 
-(defn expand-in-nested-context [form]
-  (binding [*nested?* true]
-    (clojure.walk/macroexpand-all form)))
+(defn has-nested-sym [env]
+  (if (cljs-env? env)
+    (contains? (:locals env) nested-sym)
+    (contains? env nested-sym)))
+
+(defn expand-in-nested-context [body]
+  `(let [~nested-sym 1]
+     ~@body))
 
 (defn- wrap-testing-block [ns-map env body]
-  (if *nested?*
+  (if (has-nested-sym env)
     (if (string? (first body))
       `(~(qualify (:test ns-map) 'testing) ~(first body) ~@(rest body))
       `(~(qualify (:test ns-map) 'testing) "NO_DESCRIPTION" ~@body))
-    (expand-in-nested-context
-      (if (string? (first body))
-        `(~(qualify (:test ns-map) 'deftest) ~(symbol (first body)) ~@(rest body))
-        `(~(qualify (:test ns-map) 'deftest) ~(gensym) ~@body)))))
+    (if (string? (first body))
+      `(~(qualify (:test ns-map) 'deftest) ~(symbol (first body)) ~(expand-in-nested-context (rest body)))
+      `(~(qualify (:test ns-map) 'deftest) ~(gensym) ~(expand-in-nested-context body)))))
 
 
 (def cljs-ns {:test 'cljs.test :core 'cljs.core})
 (def clj-ns {:test 'clojure.test :core 'clojure.core})
 
 (defn get-env-ns [env]
-  (if env cljs-ns clj-ns))
+  (if (boolean (:ns env))
+    cljs-ns
+    clj-ns))
 
 (defn expand-future-fact [env [d & _]]
   (let [ns-map (get-env-ns env)]
@@ -82,7 +78,7 @@
 (defn expand-fact [env body]
   (let [ns-map (get-env-ns env)]
     (if (sequential? body)
-      (->> body (assertions env ns-map) (wrap-testing-block ns-map env))
+      (->> body (assertions ns-map) (wrap-testing-block ns-map env))
       body)))
 
 (defmacro fact [& body]
