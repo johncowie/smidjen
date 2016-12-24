@@ -1,5 +1,5 @@
 (ns smidje.core
-  (:require [cljs.analyzer :refer [resolve-var]]))
+  (:require [cljs.test]))
 
 (defn cljs-env? [env]
   (boolean (:ns env)))
@@ -40,7 +40,7 @@
           `(~(qualify (:test ns-map) 'is) (~(qualify (:core ns-map) 'not) (~(qualify (:core ns-map) '=) ~expected ~actual))))))
 
 (defn- assertions [ns-map body]
-  (doall (scan (partial make-assertion ns-map) 3 body)))
+  (scan (partial make-assertion ns-map) 3 body))
 
 (def nested-sym (gensym))
 
@@ -67,7 +67,7 @@
 (def clj-ns {:test 'clojure.test :core 'clojure.core})
 
 (defn get-env-ns [env]
-  (if (boolean (:ns env))
+  (if (cljs-env? env)
     cljs-ns
     clj-ns))
 
