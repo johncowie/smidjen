@@ -1,4 +1,5 @@
-(ns smidje.core)
+(ns smidje.core
+  (:require [clojure.string :as str]))
 
 (defn cljs-env? [env]
   (boolean (:ns env)))
@@ -52,14 +53,23 @@
   `(let [~nested-sym 1]
      ~@body))
 
+(defn- deftest-sym [str]
+  (-> str (str/replace #"[^a-zA-Z0-9]+" "-") symbol))
+
+(defn- testing-expr [ns-map body]
+  (if (string? (first body))
+    `(~(qualify (:test ns-map) 'testing) ~(first body) ~@(rest body))
+    `(~(qualify (:test ns-map) 'testing) "NO_DESCRIPTION" ~@body)))
+
+(defn- deftest-expr [ns-map body]
+  (if (string? (first body))
+    `(~(qualify (:test ns-map) 'deftest) ~(deftest-sym (first body)) ~(expand-in-nested-context (rest body)))
+    `(~(qualify (:test ns-map) 'deftest) ~(gensym) ~(expand-in-nested-context body))))
+
 (defn- wrap-testing-block [ns-map env body]
   (if (has-nested-sym env)
-    (if (string? (first body))
-      `(~(qualify (:test ns-map) 'testing) ~(first body) ~@(rest body))
-      `(~(qualify (:test ns-map) 'testing) "NO_DESCRIPTION" ~@body))
-    (if (string? (first body))
-      `(~(qualify (:test ns-map) 'deftest) ~(symbol (first body)) ~(expand-in-nested-context (rest body)))
-      `(~(qualify (:test ns-map) 'deftest) ~(gensym) ~(expand-in-nested-context body)))))
+    (testing-expr ns-map body)
+    (deftest-expr ns-map body)))
 
 
 (def cljs-ns {:test 'cljs.test :core 'cljs.core})

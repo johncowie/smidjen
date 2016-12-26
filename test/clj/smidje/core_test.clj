@@ -31,13 +31,13 @@
 
    "fact with string description"
    ['(fact "3 is 3" 3 => 3)
-    `(deftest ~(symbol "3 is 3") (let [~'nested-sym 1] (is (= 3 3))))]
+    `(deftest ~(symbol "3-is-3") (let [~'nested-sym 1] (is (= 3 3))))]
 
    "fact with a string description and two assertions"
    ['(fact "test with two facts"
            (+ 2 2) => 5
            (+ 1 3) => 4)
-    `(deftest ~(symbol "test with two facts")
+    `(deftest ~(symbol "test-with-two-facts")
                 (let [~'nested-sym 1]
                   (is (clojure.core/= 5 ~'(+ 2 2)))
                   (is (clojure.core/= 4 ~'(+ 1 3)))))]
