@@ -1,5 +1,4 @@
-(ns smidje.core
-  (:require [cljs.test]))
+(ns smidje.core)
 
 (defn cljs-env? [env]
   (boolean (:ns env)))
