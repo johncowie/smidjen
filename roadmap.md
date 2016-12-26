@@ -6,7 +6,7 @@
 - [x] =not=>
 - [x] future-facts
 - [x] cljs support
-- [ ] predicates
+- [x] predicates
 - [ ] exception checks
 - [ ] every-checker
 - [ ] tabular
