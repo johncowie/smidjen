@@ -11,10 +11,11 @@
 (def syms {::deftest :test
            ::testing :test
            ::is      :test
-           ::if      :core
            ::println :core
            ::=       :core
-           ::not     :core})
+           ::not     :core
+           ::fn?     :core
+           })
 
 (defn qualify-sym [ns-map sym-key]
   (if-let [ns-key (get syms sym-key)]
@@ -49,12 +50,31 @@
        (not (arrow-form? actual))
        (not (arrow-form? expected))))                       ;; TODO if middle is arrow and others aren't, throw exception
 
+(defn primitive? [v]
+  (and (not (seq? v))
+       (not (fn? v))
+       (not (symbol? v))))
+
+(defn- assert-eq [actual expected]
+  (if (primitive? expected)
+    `(::is (::= ~expected ~actual))
+    `(if (::fn? ~expected)
+       (::is (~expected ~actual))
+       (::is (::= ~expected ~actual)))))
+
+(defn- assert-not-eq [actual expected]
+  (if (primitive? expected)
+    `(::is (::not (::= ~expected ~actual)))
+    `(if (::fn? ~expected)
+       (::is (::not (~expected ~actual)))
+       (::is (::not (::= ~expected ~actual))))))
+
 (defn- make-assertion [actual s expected]
   (when (valid-assertion? actual s expected)
     (cond (eq-arrow? s)
-          `(::is (::= ~expected ~actual))
+          (assert-eq actual expected)
           (not-eq-arrow? s)
-          `(::is (::not (::= ~expected ~actual))))))
+          (assert-not-eq actual expected))))
 
 (defn- assertions [body]
   (scan (partial make-assertion) 3 body))

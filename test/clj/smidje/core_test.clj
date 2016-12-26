@@ -38,9 +38,9 @@
            (+ 2 2) => 5
            (+ 1 3) => 4)
     `(deftest ~(symbol "test-with-two-facts")
-                (let [~'nested-sym 1]
-                  (is (clojure.core/= 5 ~'(+ 2 2)))
-                  (is (clojure.core/= 4 ~'(+ 1 3)))))]
+       (let [~'nested-sym 1]
+         (is (clojure.core/= 5 ~'(+ 2 2)))
+         (is (clojure.core/= 4 ~'(+ 1 3)))))]
 
    "nested fact (i.e. wrapped with nested-sym let binding)"
    ['(fact-with-env {nested-sym 1}
@@ -48,8 +48,8 @@
                     (+ 4 5) => 9
                     (- 10 8) => 2)
     `(testing "some maths"
-                (is (= 9 ~'(+ 4 5)))
-                (is (= 2 ~'(- 10 8))))]
+       (is (= 9 ~'(+ 4 5)))
+       (is (= 2 ~'(- 10 8))))]
 
    "nested fact with no description"
    ['(fact-with-env {nested-sym 1}
@@ -61,10 +61,10 @@
            (prn "something")
            "b" => "b")
     `(deftest ~'G__0
-                (let [~'nested-sym 1]
-                  (is (= "a" "a"))
-                  ~'(prn "something")
-                  (is (= "b" "b"))))]
+       (let [~'nested-sym 1]
+         (is (= "a" "a"))
+         ~'(prn "something")
+         (is (= "b" "b"))))]
 
    "the =not=checker"
    ['(fact (+ 1 1) =not=> 3)
@@ -86,11 +86,28 @@
    ['(fact "f" (= 2 2) => true)
     `(deftest ~'f (let [~'nested-sym 1] (is (= true ~'(= 2 2)))))]
 
+   "can pass a predicate to the right hand side"
+   ['(fact "f" 3 => even?)
+    `(deftest ~'f (let [~'nested-sym 1] (if (fn? ~'even?)
+                                          (is (~'even? 3))
+                                          (is (= ~'even? 3)))))]
+
+   "can pass a symbol to the right hand side"
+   ['(fact "f" 3 => answer)
+    `(deftest ~'f (let [~'nested-sym 1]
+                    (if (fn? ~'answer)
+                      (is (~'answer 3))
+                      (is (= ~'answer 3)))))]
+
    "if :ns is present in environment, then assumes clojurescript"
    ['(fact-with-env {:ns "cljs"}
                     3 => 1)
     `(cljs.test/deftest ~'G__0 (let [~'nested-sym 1] (cljs.test/is (cljs.core/= 1 3))))]
    })
+
+(not (= "(clojure.test/deftest f (clojure.core/let [nested-sym 1] (clojure.test/is (clojure.core/if (clojure.core/fn? answer) (answer 3) (clojure.core/= answer 3)))))"
+        "(clojure.test/deftest f (clojure.core/let [nested-sym 1] (if (clojure.core/fn? answer) (clojure.test/is (answer 3)) (clojure.test/is (clojure.core/= answer 3)))))"))
+
 ;; TODO test nested future-facts
 ;; TODO nesting works at compile time - but what about functions that wrap facts, then being called inside another fact block?
 
