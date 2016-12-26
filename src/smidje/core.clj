@@ -53,8 +53,11 @@
   `(let [~nested-sym 1]
      ~@body))
 
-(defn- deftest-sym [str]
-  (-> str (str/replace #"[^a-zA-Z0-9]+" "-") symbol))
+(defn- deftest-sym [s]
+  (-> s
+      (str/replace #"[^a-zA-Z0-9]+" "-")
+      (str/replace #"^[0-9]" #(str "_" %1))
+      symbol))
 
 (defn- testing-expr [ns-map body]
   (if (string? (first body))
