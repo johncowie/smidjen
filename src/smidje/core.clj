@@ -1,11 +1,28 @@
 (ns smidje.core
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [clojure.walk :refer [postwalk]]))
 
 (defn cljs-env? [env]
   (boolean (:ns env)))
 
 (defn- qualify [prefix s]
   (symbol (str (name prefix) "/" (name s))))
+
+(def syms {::deftest :test
+           ::testing :test
+           ::is      :test
+           ::if      :core
+           ::println :core
+           ::=       :core
+           ::not     :core})
+
+(defn qualify-sym [ns-map sym-key]
+  (if-let [ns-key (get syms sym-key)]
+    (qualify (ns-key ns-map) sym-key)
+    sym-key))
+
+(defn qualify-syms [ns-map body]
+  (postwalk (partial qualify-sym ns-map) body))
 
 (defn- smidje-sym? [f]
   (fn [s]
@@ -30,17 +47,17 @@
 (defn- valid-assertion? [actual s expected]
   (and (arrow-form? s)
        (not (arrow-form? actual))
-       (not (arrow-form? expected))))                   ;; TODO if middle is arrow and others aren't, throw exception
+       (not (arrow-form? expected))))                       ;; TODO if middle is arrow and others aren't, throw exception
 
-(defn- make-assertion [ns-map actual s expected]
+(defn- make-assertion [actual s expected]
   (when (valid-assertion? actual s expected)
     (cond (eq-arrow? s)
-          `(~(qualify (:test ns-map) 'is) (~(qualify (:core ns-map) '=) ~expected ~actual))
+          `(::is (::= ~expected ~actual))
           (not-eq-arrow? s)
-          `(~(qualify (:test ns-map) 'is) (~(qualify (:core ns-map) 'not) (~(qualify (:core ns-map) '=) ~expected ~actual))))))
+          `(::is (::not (::= ~expected ~actual))))))
 
-(defn- assertions [ns-map body]
-  (scan (partial make-assertion ns-map) 3 body))
+(defn- assertions [body]
+  (scan (partial make-assertion) 3 body))
 
 (def nested-sym (gensym))
 
@@ -59,21 +76,20 @@
       (str/replace #"^[0-9]" #(str "_" %1))
       symbol))
 
-(defn- testing-expr [ns-map body]
+(defn- testing-expr [body]
   (if (string? (first body))
-    `(~(qualify (:test ns-map) 'testing) ~(first body) ~@(rest body))
-    `(~(qualify (:test ns-map) 'testing) "NO_DESCRIPTION" ~@body)))
+    `(::testing ~(first body) ~@(rest body))
+    `(::testing "NO_DESCRIPTION" ~@body)))
 
-(defn- deftest-expr [ns-map body]
+(defn- deftest-expr [body]
   (if (string? (first body))
-    `(~(qualify (:test ns-map) 'deftest) ~(deftest-sym (first body)) ~(expand-in-nested-context (rest body)))
-    `(~(qualify (:test ns-map) 'deftest) ~(gensym) ~(expand-in-nested-context body))))
+    `(::deftest ~(deftest-sym (first body)) ~(expand-in-nested-context (rest body)))
+    `(::deftest ~(gensym) ~(expand-in-nested-context body))))
 
-(defn- wrap-testing-block [ns-map env body]
+(defn- wrap-testing-block [env body]
   (if (has-nested-sym env)
-    (testing-expr ns-map body)
-    (deftest-expr ns-map body)))
-
+    (testing-expr body)
+    (deftest-expr body)))
 
 (def cljs-ns {:test 'cljs.test :core 'cljs.core})
 (def clj-ns {:test 'clojure.test :core 'clojure.core})
@@ -85,12 +101,14 @@
 
 (defn expand-future-fact [env [d & _]]
   (let [ns-map (get-env-ns env)]
-    `(~(qualify (:core ns-map) 'println) ~(str "WORK TO DO: " d))))
+    (->>
+      `(::println ~(str "WORK TO DO: " d))
+      (qualify-syms ns-map))))
 
 (defn expand-fact [env body]
   (let [ns-map (get-env-ns env)]
     (if (sequential? body)
-      (->> body (assertions ns-map) (wrap-testing-block ns-map env))
+      (->> body assertions (wrap-testing-block env) (qualify-syms ns-map))
       body)))
 
 (defmacro fact [& body]

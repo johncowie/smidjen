@@ -82,6 +82,10 @@
    ['(future-facts "tbd" (+ 1 1) => 3)
     `(println "WORK TO DO: tbd")]
 
+   "syms that aren't written by macro aren't qualified"
+   ['(fact "f" (= 2 2) => true)
+    `(deftest ~'f (let [~'nested-sym 1] (is (= true ~'(= 2 2)))))]
+
    "if :ns is present in environment, then assumes clojurescript"
    ['(fact-with-env {:ns "cljs"}
                     3 => 1)
