@@ -14,8 +14,7 @@
            ::println :core
            ::=       :core
            ::not     :core
-           ::fn?     :core
-           })
+           ::fn?     :core})
 
 (defn qualify-sym [ns-map sym-key]
   (if-let [ns-key (get syms sym-key)]
@@ -55,26 +54,25 @@
        (not (fn? v))
        (not (symbol? v))))
 
-(defn- assert-eq [actual expected]
-  (if (primitive? expected)
-    `(::is (::= ~expected ~actual))
-    `(if (::fn? ~expected)
-       (::is (~expected ~actual))
-       (::is (::= ~expected ~actual)))))
+(defn wrap-is [pred]
+  `(::is ~pred))
 
-(defn- assert-not-eq [actual expected]
+(defn wrap-is-not [pred]
+  `(::is (::not ~pred)))
+
+(defn- assert-eq [wrapper actual expected]
   (if (primitive? expected)
-    `(::is (::not (::= ~expected ~actual)))
+    (wrapper `(::= ~expected ~actual))
     `(if (::fn? ~expected)
-       (::is (::not (~expected ~actual)))
-       (::is (::not (::= ~expected ~actual))))))
+       ~(wrapper `(~expected ~actual))
+       ~(wrapper `(::= ~expected ~actual)))))
 
 (defn- make-assertion [actual s expected]
   (when (valid-assertion? actual s expected)
     (cond (eq-arrow? s)
-          (assert-eq actual expected)
+          (assert-eq wrap-is actual expected)
           (not-eq-arrow? s)
-          (assert-not-eq actual expected))))
+          (assert-eq wrap-is-not actual expected))))
 
 (defn- assertions [body]
   (scan (partial make-assertion) 3 body))
