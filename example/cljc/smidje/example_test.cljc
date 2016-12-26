@@ -5,13 +5,13 @@
        :cljs
        [smidje.core :refer-macros [fact facts]])))
 
-(fact "about-basic-string-equality"
+(fact "about basic string equality"
         "derek" => "clive")
 
-(facts "About-number-equality"
+(facts "About number equality"
        (+ 2 2) => 5)
 
-(facts "about-multiple-number-facts-interrupted-by-some-other-code"
+(facts "about multiple number facts interrupted by some other code"
        (prn "test1")
        (+ 1 2) => 4
        (prn "test2")
