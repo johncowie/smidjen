@@ -120,7 +120,9 @@
 (defn expand-future-fact [env [d & _]]
   (let [ns-map (get-env-ns env)]
     (->>
-      `(::println ~(str "WORK TO DO: " d))
+      (if (has-nested-sym env)
+        `(::println ~(str "\nWORK TO DO: " d))
+        `(::deftest ~(deftest-sym d) (::println ~(str "\nWORK TO DO: " d))))
       (qualify-syms ns-map))))
 
 (defn expand-fact [env body]

@@ -1,7 +1,7 @@
 (ns smidje.example-test
   (:require
     #?(:clj
-        [smidje.core :refer [fact facts]]
+        [smidje.core :refer [fact facts future-fact future-facts]]
        :cljs
        [smidje.core :refer-macros [fact facts future-facts future-fact]])))
 
@@ -12,9 +12,9 @@
        (+ 2 2) => 5)
 
 (facts "about multiple number facts interrupted by some other code"
-       (prn "test1")
+       (comment "test1")
        (+ 1 2) => 4
-       (prn "test2")
+       (comment "test2")
        5 => (- 7 3))
 
 (fact "3 is a number at the beginning of a test"
@@ -31,7 +31,10 @@
 (def f 6)
 
 (fact "can test against symbol"
-      4 => 6)
+      4 => f
+      (future-fact "a future fact"))
+
+(future-facts "top level future fact")
 
 (facts
   (+ 1 1) => "bob")

@@ -19,6 +19,9 @@
 (defmacro fact-with-env [env & body]
   (expand-fact env body))
 
+(defmacro future-with-env [env & body]
+  (expand-future-fact env body))
+
 (def test-cases
   {
    "basic fact without string description"
@@ -76,11 +79,15 @@
 
    "future-fact prints out to console"
    ['(future-fact "tbd" (+ 1 1) => 3)
-    `(println "WORK TO DO: tbd")]
+    `(deftest ~'tbd (println "\nWORK TO DO: tbd"))]
 
    "future-facts does the same thing"
    ['(future-facts "tbd" (+ 1 1) => 3)
-    `(println "WORK TO DO: tbd")]
+    `(deftest ~'tbd (println "\nWORK TO DO: tbd"))]
+
+   "if future-fact is nested, then is not wrapped in deftest"
+   ['(future-with-env {nested-sym 1} "something")
+    `(println "\nWORK TO DO: something")]
 
    "syms that aren't written by macro aren't qualified"
    ['(fact "f" (= 2 2) => true)
