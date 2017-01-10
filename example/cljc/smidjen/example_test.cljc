@@ -1,9 +1,9 @@
-(ns smidje.example-test
+(ns smidjen.example-test
   (:require
     #?(:clj
-        [smidje.core :refer [fact facts future-fact future-facts]]
+        [smidjen.core :refer [fact facts future-fact future-facts]]
        :cljs
-       [smidje.core :refer-macros [fact facts future-facts future-fact]])))
+       [smidjen.core :refer-macros [fact facts future-facts future-fact]])))
 
 (fact "about basic string equality"
         "derek" => "clive")
@@ -35,6 +35,13 @@
       (future-fact "a future fact"))
 
 (future-facts "top level future fact")
+
+(fact "fact1"
+      (+ 7 7) => 42)
+
+;; FIXME this test overrides fact1 test above
+(fact "fact1"
+      (+ 8 8) => 42)
 
 (facts
   (+ 1 1) => "bob")

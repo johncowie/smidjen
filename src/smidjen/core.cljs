@@ -1,2 +1,2 @@
-(ns smidje.core
+(ns smidjen.core
   (:require [cljs.test]))

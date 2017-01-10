@@ -3,11 +3,16 @@ TODOS
  - [X] Make separate directory/profile for example tests
  - [X] Deal with case where fact string begins with a number
  - [X] Predicates
- - [ ] Still wrap future-facts in deftest block
+ - [X] Still wrap future-facts in deftest block
+ - [ ] Deal with cases where deftest symbols are the same
  - [ ] Update readme to include current progress
-   - [ ] facts
+   - [ ] clojars link
+   - [X] facts
    - [ ] future-facts
-   - [ ] arrows
-   - [ ] not arrows
-   - [ ] predicates
-   - [ ] lein test-refresh
+   - [X] arrows
+   - [X] not arrows
+   - [X] predicates
+   - [X] lein test-refresh
+
+QUESTIONS
+ - [ ] Is it possible to access deftest context?

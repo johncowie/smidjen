@@ -1,6 +1,6 @@
-(ns smidje.core-test
+(ns smidjen.core-test
   (:require [clojure.test :refer [deftest testing is]]
-            [smidje.core :as sm :refer [expand-fact expand-future-fact fact facts future-fact future-facts]]
+            [smidjen.core :as sm :refer [expand-fact expand-future-fact fact facts future-fact future-facts]]
             [cljs.analyzer :refer [resolve-var]]))
 
 (defn stub-gen-sym
@@ -13,7 +13,7 @@
 
 (defmacro predictable-macroexpand-1 [form]
   `(with-redefs [clojure.core/gensym (stub-gen-sym)
-                 smidje.core/nested-sym (symbol "nested-sym")]
+                 smidjen.core/nested-sym (symbol "nested-sym")]
      (print-str (macroexpand-1 ~form))))
 
 (defmacro fact-with-env [env & body]

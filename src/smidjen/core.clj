@@ -1,4 +1,4 @@
-(ns smidje.core
+(ns smidjen.core
   (:require [clojure.string :as str]
             [clojure.walk :refer [postwalk]]))
 
