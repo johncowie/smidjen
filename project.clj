@@ -1,12 +1,13 @@
-(defproject smidjen "0.1.0-SNAPSHOT"
+(defproject smidjen "0.1.0"
   :description "Just a smidjen of midje"
   :url "http://github.com/johncowie/smidjen"
   :license {:name "The MIT License"
             :url  "https://opensource.org/licenses/MIT"}
-  :dependencies [[org.clojure/clojure "1.8.0"]
-                 [org.clojure/clojurescript "1.9.293"]]
+  ;; FIXME DON'T INCLUDE THESE AS DEPENDENCIES
   :profiles {:dev     {:plugins                  [[com.jakemccrary/lein-test-refresh "0.18.0"]
                                                   [lein-doo "0.1.7"]]
+                       :dependencies             [[org.clojure/clojure "1.8.0"]
+                                                  [org.clojure/clojurescript "1.9.293"]]
                        :test-paths               ["test/clj"]
                        ;:cljsbuild                {:builds {:test {:source-paths ["src/" "test/cljc" "test/cljs"]
                        ;                                           :compiler     {:output-to     "target/cljs/testable.js"
@@ -15,6 +16,8 @@
                        :monkeypatch-clojure-test false}
              :example {:plugins                  [[com.jakemccrary/lein-test-refresh "0.18.0"]
                                                   [lein-doo "0.1.7"]]
+                       :dependencies             [[org.clojure/clojure "1.8.0"]
+                                                  [org.clojure/clojurescript "1.9.293"]]
                        :source-paths             ["src/"]
                        :test-paths               ["example/cljc"]
                        :cljsbuild                {:builds {:test {:source-paths ["src/" "example/cljc" "example/cljs"]
