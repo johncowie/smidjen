@@ -62,18 +62,25 @@
   `(::is (::not ~pred)))
 
 (defn- assert-eq [wrapper actual expected]
-  (if (primitive? expected)
-    (wrapper `(::= ~expected ~actual))
-    `(if (::fn? ~expected)
-       ~(wrapper `(~expected ~actual))
-       ~(wrapper `(::= ~expected ~actual)))))
+  (cond (primitive? expected) (wrapper `(::= ~expected ~actual))
+        :else `(if (::fn? ~expected)
+                 ~(wrapper `(~expected ~actual))
+                 ~(wrapper `(::= ~expected ~actual)))))
+
+(defn throws-exp? [expected]
+  (and (list? expected)
+       ((smidje-sym? 'throws) (first expected))))
+
+(defn thrown-exp [actual [_ exception-type]]
+  `(::is (~'thrown? ~exception-type ~actual)))
 
 (defn- make-assertion [actual s expected]
   (when (valid-assertion? actual s expected)
-    (cond (eq-arrow? s)
-          (assert-eq wrap-is actual expected)
-          (not-eq-arrow? s)
-          (assert-eq wrap-is-not actual expected))))
+    (case [(eq-arrow? s) (throws-exp? expected)]
+      [true false] (assert-eq wrap-is actual expected)
+      [false false] (assert-eq wrap-is-not actual expected)
+      [true true] (thrown-exp actual expected)
+      (throw (Exception. "SOMETHING HAS GONE MAJORLY WRONG")))))
 
 (defn- assertions [body]
   (scan (partial make-assertion) 3 body))

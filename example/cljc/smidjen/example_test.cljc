@@ -50,3 +50,6 @@
       (let [x 1 y 2]
         x => y))
 
+(fact "incorrect exception thrown"
+      (throw (Exception. "ARGH")) =not=> (throws IndexOutOfBoundsException))
+

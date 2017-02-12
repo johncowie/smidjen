@@ -114,14 +114,18 @@
    "can nest fact inside of let binding and arrow will still get rewritten"
    ['(fact "f" (let [x 1 y 2] x => y))
     `(deftest ~'f (let [~'nested-sym 1]
-                    (~'let [~'x 1 ~'y 2]                    ;; FIXME This is being rewritten by map
+                    (~'let [~'x 1 ~'y 2]
                       (if (fn? ~'y)
                         (is (~'y ~'x))
                         (is (= ~'y ~'x))))))]
-   })
 
-(not (= "(clojure.test/deftest f (clojure.core/let [nested-sym 1] (let [x 1 y 2] (if (clojure.core/fn? y) (clojure.test/is (y x)) (clojure.test/is (clojure.core/= y x))))))"
-        "(clojure.test/deftest f (clojure.core/let [nested-sym 1] (let (x 1 y 2) (if (clojure.core/fn? y) (clojure.test/is (y x)) (clojure.test/is (clojure.core/= y x))))))"))
+   "can assert on thrown exception"
+   ['(fact "f" (+ 1 2) => (throws AssertionError))
+    `(deftest ~'f
+       (let [~'nested-sym 1]
+         (is (~'thrown? ~'AssertionError ~'(+ 1 2)))
+         ))]
+   })
 
 
 ;; TODO test nested future-facts
