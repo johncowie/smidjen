@@ -35,14 +35,15 @@
   (or (eq-arrow? s)
       (not-eq-arrow? s)))
 
+;; Need to write version of scan that doesn't modify collection (i.e. vector to lazy-seq)
 (defn- scan
-  [f n s]
-  (let [ss (take n s)]
-    (if (= (count ss) n)
-      (if-let [r (apply f ss)]
-        (cons r (scan f n (drop n s)))
-        (cons (first s) (scan f n (rest s))))
-      s)))
+  [f n c]
+  (let [subc (take n c)]
+    (if (= (count subc) n)
+      (if-let [r (apply f subc)]
+        (cons r (scan f n (drop n c)))
+        (cons (first c) (scan f n (rest c))))
+      c)))
 
 (defn- valid-assertion? [actual s expected]
   (and (arrow-form? s)
@@ -77,6 +78,11 @@
 (defn- assertions [body]
   (scan (partial make-assertion) 3 body))
 
+(defn- rewrite-arrows [body]
+  (postwalk
+    (fn [v] (if (and (sequential? v) (not (vector? v))) (assertions v) v))
+    body))
+
 (def nested-sym (gensym))
 
 (defn has-nested-sym [env]
@@ -106,8 +112,8 @@
 
 (defn- wrap-testing-block [env body]
   (if (has-nested-sym env)
-    (testing-expr body)
-    (deftest-expr body)))
+    (-> body testing-expr)                                  ;; arrows already rewritten by deftest-expr
+    (-> body rewrite-arrows deftest-expr)))
 
 (def cljs-ns {:test 'cljs.test :core 'cljs.core})
 (def clj-ns {:test 'clojure.test :core 'clojure.core})
@@ -127,9 +133,7 @@
 
 (defn expand-fact [env body]
   (let [ns-map (get-env-ns env)]
-    (if (sequential? body)
-      (->> body assertions (wrap-testing-block env) (qualify-syms ns-map))
-      body)))
+    (->> body (wrap-testing-block env) (qualify-syms ns-map))))
 
 (defmacro fact [& body]
   (expand-fact &env body))

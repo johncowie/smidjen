@@ -46,3 +46,7 @@
 (facts
   (+ 1 1) => "bob")
 
+(fact "arrows inside let"
+      (let [x 1 y 2]
+        x => y))
+

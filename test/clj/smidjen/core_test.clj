@@ -45,19 +45,19 @@
          (is (clojure.core/= 5 ~'(+ 2 2)))
          (is (clojure.core/= 4 ~'(+ 1 3)))))]
 
-   "nested fact (i.e. wrapped with nested-sym let binding)"
+   "nested fact (i.e. wrapped with nested-sym let binding) - arrows not rewritten"
    ['(fact-with-env {nested-sym 1}
                     "some maths"
                     (+ 4 5) => 9
                     (- 10 8) => 2)
     `(testing "some maths"
-       (is (= 9 ~'(+ 4 5)))
-       (is (= 2 ~'(- 10 8))))]
+       ~'(+ 4 5) ~'=> ~'9
+       ~'(- 10 8) ~'=> ~'2)]
 
-   "nested fact with no description"
+   "nested fact with no description - arrows not rewritten"
    ['(fact-with-env {nested-sym 1}
                     (+ 2 2) => 5)
-    `(testing "NO_DESCRIPTION" (is (= 5 ~'(+ 2 2))))]
+    `(testing "NO_DESCRIPTION" ~'(+ 2 2) ~'=> ~'5)]
 
    "fact with assertions separated by another statement"
    ['(fact "a" => "a"
@@ -110,10 +110,19 @@
    ['(fact-with-env {:ns "cljs"}
                     3 => 1)
     `(cljs.test/deftest ~'G__0 (let [~'nested-sym 1] (cljs.test/is (cljs.core/= 1 3))))]
+
+   "can nest fact inside of let binding and arrow will still get rewritten"
+   ['(fact "f" (let [x 1 y 2] x => y))
+    `(deftest ~'f (let [~'nested-sym 1]
+                    (~'let [~'x 1 ~'y 2]                    ;; FIXME This is being rewritten by map
+                      (if (fn? ~'y)
+                        (is (~'y ~'x))
+                        (is (= ~'y ~'x))))))]
    })
 
-(not (= "(clojure.test/deftest f (clojure.core/let [nested-sym 1] (clojure.test/is (clojure.core/if (clojure.core/fn? answer) (answer 3) (clojure.core/= answer 3)))))"
-        "(clojure.test/deftest f (clojure.core/let [nested-sym 1] (if (clojure.core/fn? answer) (clojure.test/is (answer 3)) (clojure.test/is (clojure.core/= answer 3)))))"))
+(not (= "(clojure.test/deftest f (clojure.core/let [nested-sym 1] (let [x 1 y 2] (if (clojure.core/fn? y) (clojure.test/is (y x)) (clojure.test/is (clojure.core/= y x))))))"
+        "(clojure.test/deftest f (clojure.core/let [nested-sym 1] (let (x 1 y 2) (if (clojure.core/fn? y) (clojure.test/is (y x)) (clojure.test/is (clojure.core/= y x))))))"))
+
 
 ;; TODO test nested future-facts
 ;; TODO nesting works at compile time - but what about functions that wrap facts, then being called inside another fact block?
