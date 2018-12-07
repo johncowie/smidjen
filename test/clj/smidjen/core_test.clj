@@ -32,6 +32,10 @@
    ['(facts 3 => 2)
     `(deftest ~'G__0 (let [~'nested-sym 1] (is (= 2 3))))]
 
+   "facts with keyword"
+   ['(facts :slow 3 => 2)
+    `(deftest ~'G__0 (let [~'nested-sym 1] (is (= 2 3))))]
+
    "fact with string description"
    ['(fact "3 is 3" 3 => 3)
     `(deftest ~(symbol "_3-is-3") (let [~'nested-sym 1] (is (= 3 3))))]
@@ -144,3 +148,10 @@
     (testing test-name
       (is (= expected actual)))))
 
+(def slow-test (macroexpand-1 '(fact :slow 1 => 12)))
+(def fast-test (macroexpand-1 '(fact 1 => 12)))
+
+(deftest slow-vs-fast
+  (letfn [(slow? [form] (-> form second meta :slow))]
+    (is (true? (slow? slow-test)))
+    (is (not (true? (slow? fast-test))))))

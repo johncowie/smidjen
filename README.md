@@ -29,6 +29,22 @@ e.g.
 ;;       (is (= "is the magic number" 3))))
 ```
 
+### Test selectors
+
+When you run your tests with `lein test-referesh` you can filter them using `lein test-refresh :fast`.
+Providing you have this configuration in `project.clj`:
+```clojure
+:test-selectors {:default     (constantly nil)
+                 :integration :integration
+                 :unit        (complement :integration)
+                 :fast        (complement :slow)}
+```
+all tests that have been marked with `:slow` won't be run
+```clojure
+(facts :slow "I am very slow"
+	(prn "You are not gonna see this message when you run lein test-refresh :fast"))
+```
+
 ### ClojureScript
 
 You can also use smidjen for clojurescript testing (it compiles down to cljs.test in this case). Just ensure that you use ```:refer-macros``` in the requires.

@@ -112,15 +112,23 @@
     `(::testing ~(first body) ~@(rest body))
     `(::testing "NO_DESCRIPTION" ~@body)))
 
-(defn- deftest-expr [body]
+(defn- with-keyword [kw s]
+  (if kw (with-meta s {kw true}) s))
+
+(defn- deftest-expr [[kw body]]
   (if (string? (first body))
-    `(::deftest ~(deftest-sym (first body)) ~(expand-in-nested-context (rest body)))
-    `(::deftest ~(gensym) ~(expand-in-nested-context body))))
+    `(::deftest ~(with-keyword kw (deftest-sym (first body))) ~(expand-in-nested-context (rest body)))
+    `(::deftest ~(with-keyword kw (gensym)) ~(expand-in-nested-context body))))
+
+(defn- extract-keyword [body]
+  (if (keyword? (first body))
+    [(first body) (rest body)]
+    [nil body]))
 
 (defn- wrap-testing-block [env body]
   (if (has-nested-sym env)
     (-> body testing-expr)                                  ;; arrows already rewritten by deftest-expr
-    (-> body rewrite-arrows deftest-expr)))
+    (-> body rewrite-arrows extract-keyword deftest-expr)))
 
 (def cljs-ns {:test 'cljs.test :core 'cljs.core})
 (def clj-ns {:test 'clojure.test :core 'clojure.core})
