@@ -32,4 +32,8 @@
             ;"auto-cljs"    ["with-profile" "dev" "doo" "phantom" "test" "auto"]
             "example"      ["with-profile" "example" "test" "smidjen.example-test"]
             "example-cljs" ["with-profile" "example" "doo" "phantom" "test" "once"]}
-  )
+  :test-selectors {:default     (constantly nil)
+                   :integration :integration
+                   :unit        (complement :integration)
+                   :fast        (complement :slow)})
+
