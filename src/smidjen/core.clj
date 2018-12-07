@@ -113,7 +113,7 @@
     `(::testing "NO_DESCRIPTION" ~@body)))
 
 (defn- with-keyword [kw s]
-  (with-meta s {kw true}))
+  (if kw (with-meta s {kw true}) s))
 
 (defn- deftest-expr [[kw body]]
   (if (string? (first body))
