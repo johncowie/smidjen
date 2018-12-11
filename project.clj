@@ -1,4 +1,4 @@
-(defproject smidjen "0.2.3-SNAPSHOT"
+(defproject smidjen "0.2.4-SNAPSHOT"
   :description "Just a smidjen of midje"
   :url "http://github.com/johncowie/smidjen"
   :license {:name "The MIT License"
