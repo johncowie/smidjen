@@ -31,7 +31,8 @@ e.g.
 
 ### Test selectors
 
-When you run your tests with `lein test-referesh` you can filter them using `lein test-refresh :fast`.
+When you run your tests with `lein test-refresh` you can filter them using (e.g.) `lein test-refresh :fast`.
+
 Providing you have this configuration in `project.clj`:
 ```clojure
 :test-selectors {:default     (constantly nil)
